@@ -1,5 +1,6 @@
 import paho.mqtt.client as mqtt
 import base64
+from datetime import datetime
 
 BROKER = "192.168.1.7"
 PORT = 1883
@@ -19,7 +20,10 @@ def on_message(client, userdata, msg):
     print(f"{msg.topic}")
     if msg.topic == TOPIC:
         try:
-            with open("received_image.jpg", "wb") as image_file:
+            current_time = datetime.now()
+            formatted_time = current_time.strftime("%Y_%m_%d_%H%M%S.jpg")
+            path = "pictures/" + formatted_time
+            with open(path, "wb") as image_file:
                 image_file.write(msg.payload)
             print("Image saved as 'received_image.jpg'")
         except Exception as e:

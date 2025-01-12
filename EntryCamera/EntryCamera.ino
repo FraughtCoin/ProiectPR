@@ -1,17 +1,17 @@
 #include "esp_camera.h"
 #include <WiFi.h>
 #include <PubSubClient.h>
+#define CAMERA_MODEL_AI_THINKER // Has PSRAM
 #include "camera_pins.h"
 
-#define CAMERA_MODEL_AI_THINKER // Has PSRAM
 
 
 const char *ssid = "DIGI_0605e0";
 const char *password = "aa21f9fa";
 
 const char *mqtt_server = "192.168.1.7";
-const char *mqtt_user = "your-mqtt-username";
-const char *mqtt_password = "your-mqtt-password";
+const char *mqtt_user = "";
+const char *mqtt_password = "";
 const char *mqtt_topic = "esp32cam/picture";
 const char *mqtt_topic_default = "esp32cam/status";
 
@@ -108,6 +108,18 @@ void setup() {
   s->set_vflip(s, 1);
 #endif
 
+  WiFi.begin(ssid, password);
+  WiFi.setSleep(false);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  client.setBufferSize(16384);
+}
+
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -120,6 +132,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 
 void reconnect() {
+  client.setServer(mqtt_server, 1883);
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     if (client.connect("ESP32CAM", mqtt_user, mqtt_password)) {
@@ -161,7 +174,7 @@ void loop() {
   client.loop();
 
   static unsigned long lastPublish = 0;
-  if (millis() - lastPublish > 30000) {
+  if (millis() - lastPublish > 10000) {
     takeAndSendPicture();
     client.publish(mqtt_topic_default, "mesaj default!");
     lastPublish = millis();
